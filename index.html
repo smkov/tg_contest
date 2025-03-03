@@ -1,1 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloudflare Proxy Test</title>
+</head>
+<body>
+    <h1>Cloudflare Proxy Test</h1>
+    <button onclick="testRequest()">Send Request</button>
+    <p id="result"></p>
 
+    <script>
+        async function testRequest() {
+            const response = await fetch("nameless-star-cc22.smkov.workers.dev");
+            const data = await response.json();
+            document.getElementById("result").innerText = data.message;
+        }
+    </script>
+</body>
+</html>
