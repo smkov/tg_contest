@@ -3,21 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloudflare Proxy Test</title>
+    <title>Direct Server Test with CAPTCHA</title>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 </head>
 <body>
-    <h1>Cloudflare Proxy Test</h1>
+    <h1>Direct Server Test with Cloudflare CAPTCHA</h1>
+
+    <!-- CAPTCHA -->
+    <div class="cf-turnstile" data-sitekey="0x4AAAAAAA_WrS-GJtkQVS3D"></div>
+    
     <button onclick="testRequest()">Send Request</button>
     <p id="result"></p>
 
     <script>
         async function testRequest() {
+            const turnstileElement = document.querySelector('.cf-turnstile');
+            const cfToken = turnstileElement.getAttribute('data-response');
+
+            if (!cfToken) {
+                document.getElementById("result").innerText = "Пройдите CAPTCHA!";
+                return;
+            }
+
             try {
-                console.log("Отправляем запрос на Cloudflare Worker...");
+                console.log("Отправляем запрос с CAPTCHA...");
 
                 const response = await fetch("https://nameless-star-cc22.smkov.workers.dev/", {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" }
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ cfToken })
                 });
 
                 console.log("Ответ сервера получен:", response);
@@ -28,7 +44,7 @@
 
                 const data = await response.json();
                 console.log("Данные от сервера:", data);
-                document.getElementById("result").innerText = data.message;
+                document.getElementById("result").innerText = JSON.stringify(data, null, 2);
             } catch (error) {
                 console.error("Ошибка запроса:", error);
                 document.getElementById("result").innerText = "Ошибка: " + error.message;
