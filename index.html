@@ -13,6 +13,8 @@
     <script>
         async function testRequest() {
             try {
+                console.log("Отправляем запрос на Cloudflare Worker...");
+
                 const response = await fetch("https://nameless-star-cc22.smkov.workers.dev/", {
                     method: "GET",
                     headers: { "Content-Type": "application/json" }
@@ -23,10 +25,11 @@
                 }
 
                 const data = await response.json();
+                console.log("Ответ от сервера:", data);
                 document.getElementById("result").innerText = data.message;
             } catch (error) {
-                console.error("Request failed:", error);
-                document.getElementById("result").innerText = "Error: " + error.message;
+                console.error("Ошибка запроса:", error);
+                document.getElementById("result").innerText = "Ошибка: " + error.message;
             }
         }
     </script>
