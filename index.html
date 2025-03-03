@@ -20,12 +20,14 @@
                     headers: { "Content-Type": "application/json" }
                 });
 
+                console.log("Ответ сервера получен:", response);
+
                 if (!response.ok) {
                     throw new Error(`HTTP Error! Status: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log("Ответ от сервера:", data);
+                console.log("Данные от сервера:", data);
                 document.getElementById("result").innerText = data.message;
             } catch (error) {
                 console.error("Ошибка запроса:", error);
