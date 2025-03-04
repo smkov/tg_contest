@@ -109,12 +109,16 @@
                 // Получаем параметры из URL мини-приложения
                 const urlParams = new URLSearchParams(window.location.search);
 
-                // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
-                if (urlParams.get("request_write") === "1") {
+                // Если параметр есть - Telegram сам покажет чекбокс
+                if (urlParams.get("web_app_request_write_access") === "1") {
+                    console.log("Приложение запущено с запросом на доступ к сообщениям.");
+                } else {
+                    // Если параметра нет, можно запросить вручную
                     Telegram.WebApp.requestWriteAccess((response) => {
-                        console.log("Статус разрешения сообщений:", response.status);
+                        console.log("Результат запроса разрешения:", response.status);
                     });
                 }
+
 
                 // Устанавливаем Site Key для капчи
                 document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
