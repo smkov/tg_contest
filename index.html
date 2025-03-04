@@ -125,12 +125,23 @@
             console.log("CAPTCHA Token:", cfToken);
             document.getElementById("captcha-container").remove();
             
-            // Показываем анимацию и запускаем
+            // Запрашиваем разрешение на отправку сообщений
+            Telegram.WebApp.requestWriteAccess((response) => {
+                console.log("Статус разрешения сообщений:", response.status);
+                if (response.status === "allowed") {
+                    console.log("Пользователь разрешил отправку сообщений!");
+                } else {
+                    console.log("Пользователь отклонил запрос на сообщения.");
+                }
+            });
+        
+            // Показываем анимацию
             animationContainer.style.display = "block"; 
             anim.play();
-
+        
             checkAccess();
         }
+
 
         async function checkAccess() {
             if (!cfToken || !telegramId) { // Проверяем, есть ли данные
