@@ -41,7 +41,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 60vh; /* Фиксированная высота */
+            height: 60vh;
             width: 100%;
         }
 
@@ -54,7 +54,7 @@
 
         /* Контейнер для результата */
         .result-container {
-            height: 20vh; /* Фиксируем область под анимацией */
+            height: 20vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -64,7 +64,7 @@
 
         /* Адаптивный текст результата */
         #status {
-            font-size: clamp(18px, 4vw, 28px); /* Адаптивный размер */
+            font-size: clamp(18px, 4vw, 28px);
             color: black;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
@@ -160,10 +160,10 @@
                 if (data.status === "allowed") {
                     statusElement.innerHTML = "✅ Условия выполнены";
                     
-                    // Телефон вибрирует
+                    // Телефон вибрирует (позитивный эффект)
                     Telegram.WebApp.HapticFeedback.impactOccurred("medium");
                     
-                    // Запускаем конфетти
+                    // Запускаем конфетти (позитивный эффект)
                     confetti({
                         particleCount: 100,
                         spread: 70,
@@ -172,6 +172,18 @@
 
                 } else {
                     statusElement.innerHTML = "❌ Условия не выполнены";
+
+                    // Телефон вибрирует (ошибочный эффект)
+                    Telegram.WebApp.HapticFeedback.notificationOccurred("error");
+
+                    // Запускаем эффект "разлетающихся частиц вниз" (негативный конфетти)
+                    confetti({
+                        particleCount: 70,
+                        spread: 50,
+                        startVelocity: -30, // Частицы летят вниз
+                        origin: { y: 0.4 }
+                    });
+
                 }
 
                 // Показываем текст плавно
