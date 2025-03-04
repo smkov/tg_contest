@@ -8,6 +8,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <style>
         body {
             text-align: center;
@@ -53,7 +54,7 @@
 
         /* Контейнер для результата */
         .result-container {
-            height: 15vh; /* Фиксируем область под анимацией */
+            height: 20vh; /* Фиксируем область под анимацией */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -67,7 +68,7 @@
             color: black;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
-            width: 100%; /* Растягивается на всю ширину контейнера */
+            width: 100%;
             text-align: center;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -158,6 +159,17 @@
 
                 if (data.status === "allowed") {
                     statusElement.innerHTML = "✅ Условия выполнены";
+                    
+                    // Телефон вибрирует
+                    Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+                    
+                    // Запускаем конфетти
+                    confetti({
+                        particleCount: 100,
+                        spread: 70,
+                        origin: { y: 0.6 }
+                    });
+
                 } else {
                     statusElement.innerHTML = "❌ Условия не выполнены";
                 }
