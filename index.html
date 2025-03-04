@@ -93,6 +93,29 @@
     </div>
 
     <script type="module">
+        // Проверяем, запущено ли приложение в Telegram (наличие Telegram.WebApp)
+        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
+            // Telegram WebApp обнаружен – выполняем существующую логику капчи и анимаций
+            Telegram.WebApp.ready();
+            const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
+            let telegramId = initDataUnsafe.user ? initDataUnsafe.user.id : null;
+            
+            // Устанавливаем Site Key для капчи, загружаем анимацию и т.д.
+            document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
+            // Остальной код инициализации (unlockSite, checkAccess и т.п.)
+            
+        } else {
+            // Если Telegram WebApp не обнаружен – заменяем содержимое страницы на простой тестовый текст
+            document.body.innerHTML = `
+                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: white;">
+                    <h1>Тестовый текст</h1>
+                </div>
+            `;
+        }
+    </script>
+
+
+    <script type="module">
         import CONFIG from './config.js';
 
         let cfToken = "";
