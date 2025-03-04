@@ -96,7 +96,6 @@
         import CONFIG from './config.js';
 
         document.addEventListener("DOMContentLoaded", () => {
-            // Проверяем, запущено ли приложение в Telegram
             if (window.Telegram &&
                 Telegram.WebApp &&
                 Telegram.WebApp.initDataUnsafe &&
@@ -109,21 +108,15 @@
                 // Получаем параметры из URL мини-приложения
                 const urlParams = new URLSearchParams(window.location.search);
                 const startAppParam = urlParams.get("startapp"); // Извлекаем значение startapp
-            
-                console.log("Переданный параметр startapp:", startAppParam); // Для отладки
-            
+
+                console.log("Переданный параметр startapp:", startAppParam);
+
                 // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
                 if (urlParams.get("web_app_request_write_access") === "1") {
                     Telegram.WebApp.requestWriteAccess((response) => {
                         console.log("Результат запроса разрешения:", response.status);
                     });
                 }
-            
-                // Теперь передадим `startapp` вместе с `telegramId` в бэкенд
-                checkAccess(startAppParam);
-                    });
-                }
-
 
                 // Устанавливаем Site Key для капчи
                 document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
@@ -138,47 +131,43 @@
                     path: "cat.json"
                 });
 
-                let cfToken = "";
                 function unlockSite(token) {
-                    cfToken = token;
-                    console.log("CAPTCHA Token:", cfToken);
+                    console.log("CAPTCHA Token:", token);
                     document.getElementById("captcha-container").remove();
 
                     // Показываем анимацию
                     animationContainer.style.display = "block";
                     anim.play();
 
-                    checkAccess();
+                    // Отправляем данные в бэкенд
+                    checkAccess(token, startAppParam);
                 }
 
-                async function checkAccess(startAppParam) {
-                    const telegramId = Telegram.WebApp.initDataUnsafe.user?.id || null;
-                    const cfToken = ""; // Если нужен Cloudflare Token, его тоже добавьте сюда
-                
+                async function checkAccess(cfToken, startAppParam) {
                     if (!telegramId) {
                         document.getElementById("status").innerText = "Ошибка: Telegram ID не получен!";
                         document.getElementById("status").style.opacity = "1";
                         return;
                     }
-                
+
                     try {
                         console.log("Отправляем запрос на проверку ID...");
-                        
+
                         const response = await fetch(CONFIG.END_POINT, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ telegramId, startAppParam }) // Передаём параметр
+                            body: JSON.stringify({ telegramId, cfToken, startAppParam }) // Передаём параметр
                         });
-                
+
                         if (!response.ok) {
                             throw new Error(`Ошибка! Статус: ${response.status}`);
                         }
-                
+
                         const data = await response.json();
                         console.log("Ответ от сервера:", data);
-                
+
                         const statusElement = document.getElementById("status");
-                
+
                         if (data.status === "allowed") {
                             statusElement.innerHTML = "✅ Условия выполнены";
                             Telegram.WebApp.HapticFeedback.impactOccurred("medium");
@@ -196,28 +185,15 @@
                             });
                             statusElement.style.animation = "shake 0.3s ease-in-out 2";
                         }
-                
+
                         statusElement.style.opacity = "1";
-                
+
                     } catch (error) {
                         console.error("Ошибка запроса:", error);
                         document.getElementById("status").innerHTML = "❌ Ошибка проверки ID";
                         document.getElementById("status").style.opacity = "1";
                     }
                 }
-
-
-                // Анимация тряски
-                const style = document.createElement("style");
-                style.innerHTML = `
-                @keyframes shake {
-                    0% { transform: translateX(0); }
-                    25% { transform: translateX(-5px); }
-                    50% { transform: translateX(5px); }
-                    75% { transform: translateX(-5px); }
-                    100% { transform: translateX(0); }
-                }`;
-                document.head.appendChild(style);
 
                 // Делаем функцию unlockSite глобальной
                 window.unlockSite = unlockSite;
