@@ -125,22 +125,17 @@
             console.log("CAPTCHA Token:", cfToken);
             document.getElementById("captcha-container").remove();
             
-            // Запрашиваем разрешение на отправку сообщений
-            Telegram.WebApp.requestWriteAccess((response) => {
-                console.log("Статус разрешения сообщений:", response.status);
-                if (response.status === "allowed") {
-                    console.log("Пользователь разрешил отправку сообщений!");
-                } else {
-                    console.log("Пользователь отклонил запрос на сообщения.");
-                }
-            });
-        
-            // Показываем анимацию
-            animationContainer.style.display = "block"; 
-            anim.play();
-        
-            checkAccess();
+            // Проверяем, запущено ли в Telegram
+            if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initData) {
+                console.log("Приложение запущено в Telegram.");
+                Telegram.WebApp.expand();
+                checkAccess();
+            } else {
+                console.log("Приложение открыто в браузере.");
+                document.body.innerHTML = "<h1>Тестовый текст</h1>"; // Показываем текст в браузере
+            }
         }
+
 
 
         async function checkAccess() {
