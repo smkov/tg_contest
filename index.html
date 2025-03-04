@@ -103,6 +103,8 @@
         const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
         if (initDataUnsafe && initDataUnsafe.user) {
             telegramId = initDataUnsafe.user.id;
+        } else {
+            telegramId = null; // Исправляем баг с "Ошибка проверки ID"
         }
 
         // Устанавливаем Site Key в CAPTCHA
@@ -131,8 +133,8 @@
         }
 
         async function checkAccess() {
-            if (!cfToken) {
-                document.getElementById("status").innerText = "Ошибка: CAPTCHA не пройдена!";
+            if (!cfToken || !telegramId) { // Проверяем, есть ли данные
+                document.getElementById("status").innerText = "Ошибка: Telegram ID не получен!";
                 document.getElementById("status").style.opacity = "1"; 
                 return;
             }
@@ -176,14 +178,14 @@
                     // Телефон вибрирует (ошибочный эффект)
                     Telegram.WebApp.HapticFeedback.notificationOccurred("error");
 
-                    // Запускаем эффект "разлетающихся частиц вниз" (негативное конфетти)
+                    // Запускаем эффект "разлетающихся частиц вниз" (негативное конфетти выше анимации)
                     confetti({
                         particleCount: 80,
                         spread: 60,
                         startVelocity: -40, // Частицы летят вниз
                         gravity: 1.2,
-                        origin: { y: 0.3 },
-                        colors: ['#ff0000', '#ff4444', '#cc0000'] // Красные частицы
+                        origin: { y: 0.2 }, // Начинается выше анимации
+                        colors: ['#ff0000', '#ff4444', '#cc0000']
                     });
 
                     // Делаем анимацию тряски текста при ошибке
