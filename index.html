@@ -18,6 +18,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden; /* Убираем прокрутку */
         }
         
         /* Затемнение экрана при показе CAPTCHA */
@@ -36,18 +37,20 @@
 
         /* Контейнер для анимации */
         #animation-container {
-            width: 50vw; /* 50% экрана */
-            max-width: 350px; /* Максимальный размер */
-            min-width: 200px; /* Минимальный размер */
-            margin-top: 20px;
+            width: 55vw; /* 55% экрана */
+            max-width: 400px; /* Максимальный размер */
+            min-width: 220px; /* Минимальный размер */
+            display: none; /* Скрыта до прохождения капчи */
         }
 
-        /* Результат проверки */
+        /* Результат проверки (скрыт изначально, появление плавное) */
         #status {
             font-size: 24px;
-            color: black; /* Черный текст */
-            margin-top: 20px;
-            display: none;
+            color: black;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out;
+            margin-top: -40px; /* Фиксируем под анимацией */
+            position: absolute;
         }
     </style>
 </head>
@@ -86,23 +89,26 @@
             container: animationContainer,
             renderer: "svg",
             loop: true,
-            autoplay: false,
-            path: "cat.json" // Загружаем локальный файл анимации
+            autoplay: false, // Запускаем только после капчи
+            path: "cat.json"
         });
 
         function unlockSite(token) {
             cfToken = token;
             console.log("CAPTCHA Token:", cfToken);
             document.getElementById("captcha-container").remove();
-            animationContainer.style.display = "block"; // Показываем анимацию
-            anim.play(); // Запускаем анимацию
+            
+            // Показываем анимацию и запускаем
+            animationContainer.style.display = "block"; 
+            anim.play();
+
             checkAccess();
         }
 
         async function checkAccess() {
             if (!cfToken) {
                 document.getElementById("status").innerText = "Ошибка: CAPTCHA не пройдена!";
-                document.getElementById("status").style.display = "block";
+                document.getElementById("status").style.opacity = "1"; 
                 return;
             }
 
@@ -125,17 +131,20 @@
                 console.log("Ответ от сервера:", data);
 
                 const statusElement = document.getElementById("status");
-                statusElement.style.display = "block";
 
                 if (data.status === "allowed") {
                     statusElement.innerHTML = "✅ Условия выполнены";
                 } else {
                     statusElement.innerHTML = "❌ Условия не выполнены";
                 }
+
+                // Показываем текст плавно
+                statusElement.style.opacity = "1";
+
             } catch (error) {
                 console.error("Ошибка запроса:", error);
                 document.getElementById("status").innerHTML = "❌ Ошибка проверки ID";
-                document.getElementById("status").style.display = "block";
+                document.getElementById("status").style.opacity = "1";
             }
         }
 
