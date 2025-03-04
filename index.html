@@ -7,15 +7,20 @@
     <script type="module" src="config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
     <style>
         body {
             text-align: center;
             font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
         }
-        #content {
-            display: none;
-            font-size: 24px;
-        }
+        
+        /* Затемнение экрана при показе CAPTCHA */
         #captcha-container {
             position: fixed;
             top: 0;
@@ -28,6 +33,23 @@
             justify-content: center;
             z-index: 9999;
         }
+
+        /* Контейнер для анимации */
+        #animation-container {
+            width: 30vw; /* 30% экрана */
+            max-width: 200px;
+            min-width: 120px;
+            display: none;
+            margin-top: 20px;
+        }
+
+        /* Результат проверки */
+        #status {
+            font-size: 24px;
+            display: none;
+            margin-top: 20px;
+        }
+
     </style>
 </head>
 <body>
@@ -37,11 +59,11 @@
         <div class="cf-turnstile" id="captcha" data-callback="unlockSite"></div>
     </div>
 
-    <!-- Основной контент -->
-    <div id="content">
-        <h1>Ваш Telegram ID: <span id="telegram-id"></span></h1>
-        <div id="status"></div>
-    </div>
+    <!-- Анимация загрузки -->
+    <div id="animation-container"></div>
+
+    <!-- Результат -->
+    <div id="status"></div>
 
     <script type="module">
         import CONFIG from './config.js';
@@ -54,25 +76,34 @@
         const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
         if (initDataUnsafe && initDataUnsafe.user) {
             telegramId = initDataUnsafe.user.id;
-            document.getElementById("telegram-id").innerText = telegramId;
-        } else {
-            document.getElementById("telegram-id").innerText = "Ошибка: нет данных Telegram";
         }
 
         // Устанавливаем Site Key в CAPTCHA
         document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
 
+        // Загружаем Lottie-анимацию из cat.json
+        const animationContainer = document.getElementById("animation-container");
+        const anim = lottie.loadAnimation({
+            container: animationContainer,
+            renderer: "svg",
+            loop: true,
+            autoplay: false,
+            path: "cat.json" // Загружаем локальный файл анимации
+        });
+
         function unlockSite(token) {
             cfToken = token;
             console.log("CAPTCHA Token:", cfToken);
             document.getElementById("captcha-container").remove();
-            document.getElementById("content").style.display = "block";
+            animationContainer.style.display = "block"; // Показываем анимацию
+            anim.play(); // Запускаем анимацию
             checkAccess();
         }
 
         async function checkAccess() {
             if (!cfToken) {
                 document.getElementById("status").innerText = "Ошибка: CAPTCHA не пройдена!";
+                document.getElementById("status").style.display = "block";
                 return;
             }
 
@@ -94,14 +125,24 @@
                 const data = await response.json();
                 console.log("Ответ от сервера:", data);
 
+                // Скрываем анимацию
+                anim.stop();
+                animationContainer.style.display = "none";
+
+                const statusElement = document.getElementById("status");
+                statusElement.style.display = "block";
+
                 if (data.status === "allowed") {
-                    document.getElementById("status").innerHTML = "✅ <b>Доступ разрешен</b>";
+                    statusElement.innerHTML = "✅ <b>Условия выполнены</b>";
+                    statusElement.style.color = "green";
                 } else {
-                    document.getElementById("status").innerHTML = "❌ <b>Доступ запрещен</b>";
+                    statusElement.innerHTML = "❌ <b>Условия не выполнены</b>";
+                    statusElement.style.color = "red";
                 }
             } catch (error) {
                 console.error("Ошибка запроса:", error);
                 document.getElementById("status").innerHTML = "❌ Ошибка проверки ID";
+                document.getElementById("status").style.display = "block";
             }
         }
 
