@@ -18,7 +18,7 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            overflow: hidden; /* Убираем прокрутку */
+            overflow: hidden;
         }
         
         /* Затемнение экрана при показе CAPTCHA */
@@ -35,29 +35,40 @@
             z-index: 9999;
         }
 
-        /* Контейнер для анимации */
-        #animation-container {
-            width: 55vw; /* 55% экрана */
-            max-width: 400px; /* Максимальный размер */
-            min-width: 220px; /* Минимальный размер */
-            display: none; /* Скрыта до прохождения капчи */
-        }
-
-        /* Контейнер для результата (позиционируем под анимацией) */
-        .result-container {
+        /* Контейнер для анимации (фиксированный размер) */
+        #animation-wrapper {
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            margin-top: 20px; /* Фиксируем положение под анимацией */
+            height: 60vh; /* Фиксированная высота */
+            width: 100%;
         }
 
-        /* Результат проверки (скрыт изначально, плавное появление) */
+        #animation-container {
+            width: 55vw;
+            max-width: 400px;
+            min-width: 220px;
+            display: none;
+        }
+
+        /* Контейнер для результата */
+        .result-container {
+            height: 10vh; /* Фиксируем область под анимацией */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Текст результата */
         #status {
             font-size: 24px;
             color: black;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
+            max-width: 80%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
     </style>
 </head>
@@ -69,7 +80,9 @@
     </div>
 
     <!-- Контейнер для анимации -->
-    <div id="animation-container"></div>
+    <div id="animation-wrapper">
+        <div id="animation-container"></div>
+    </div>
 
     <!-- Контейнер для результата -->
     <div class="result-container">
@@ -98,7 +111,7 @@
             container: animationContainer,
             renderer: "svg",
             loop: true,
-            autoplay: false, // Запускаем только после капчи
+            autoplay: false,
             path: "cat.json"
         });
 
