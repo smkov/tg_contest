@@ -3,12 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Конкурс</title>
+    <title>Проверка доступа</title>
+    <script type="module" src="config.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
         #content {
             display: none;
+            font-size: 24px;
         }
         #captcha-container {
             position: fixed;
@@ -26,17 +32,20 @@
 </head>
 <body>
 
+    <!-- CAPTCHA -->
     <div id="captcha-container">
-        <div class="cf-turnstile" data-sitekey="0x4AAAAAAA_W6xNKpQ-7finl" data-callback="unlockSite"></div>
+        <div class="cf-turnstile" id="captcha" data-callback="unlockSite"></div>
     </div>
 
+    <!-- Основной контент -->
     <div id="content">
         <h1>Ваш Telegram ID: <span id="telegram-id"></span></h1>
-        <button onclick="testRequest()">Отправить тестовый запрос</button>
-        <p id="result"></p>
+        <div id="status"></div>
     </div>
 
-    <script>
+    <script type="module">
+        import CONFIG from './config.js';
+
         let cfToken = "";
         let telegramId = "";
 
@@ -50,23 +59,27 @@
             document.getElementById("telegram-id").innerText = "Ошибка: нет данных Telegram";
         }
 
+        // Устанавливаем Site Key в CAPTCHA
+        document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
+
         function unlockSite(token) {
             cfToken = token;
             console.log("CAPTCHA Token:", cfToken);
             document.getElementById("captcha-container").remove();
             document.getElementById("content").style.display = "block";
+            checkAccess();
         }
 
-        async function testRequest() {
+        async function checkAccess() {
             if (!cfToken) {
-                document.getElementById("result").innerText = "Пройдите CAPTCHA!";
+                document.getElementById("status").innerText = "Ошибка: CAPTCHA не пройдена!";
                 return;
             }
 
             try {
-                console.log("Отправляем запрос...");
+                console.log("Отправляем запрос на проверку ID...");
 
-                const response = await fetch("https://nameless-star-cc22.smkov.workers.dev/backend7", {
+                const response = await fetch("https://nameless-star-cc22.smkov.workers.dev", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ cfToken, telegramId })
@@ -79,12 +92,21 @@
                 }
 
                 const data = await response.json();
-                document.getElementById("result").innerText = JSON.stringify(data, null, 2);
+                console.log("Ответ от сервера:", data);
+
+                if (data.status === "allowed") {
+                    document.getElementById("status").innerHTML = "✅ <b>Доступ разрешен</b>";
+                } else {
+                    document.getElementById("status").innerHTML = "❌ <b>Доступ запрещен</b>";
+                }
             } catch (error) {
                 console.error("Ошибка запроса:", error);
-                document.getElementById("result").innerText = "Ошибка: " + error.message;
+                document.getElementById("status").innerHTML = "❌ Ошибка проверки ID";
             }
         }
+
+        // Делаем `unlockSite` глобальной функцией
+        window.unlockSite = unlockSite;
     </script>
 
 </body>
