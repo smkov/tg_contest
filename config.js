@@ -1,6 +1,6 @@
 // config.js
 const CONFIG = {
-    SITE_KEY: "YOUR_SITE_KEY"  // Замените на реальный Site Key из Cloudflare
+    SITE_KEY: "0x4AAAAAAA_W6xNKpQ-7finl"  // Site Key из Cloudflare
 };
 
 // Экспортируем объект CONFIG
