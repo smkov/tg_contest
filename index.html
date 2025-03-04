@@ -43,14 +43,21 @@
             display: none; /* Скрыта до прохождения капчи */
         }
 
-        /* Результат проверки (скрыт изначально, появление плавное) */
+        /* Контейнер для результата (позиционируем под анимацией) */
+        .result-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px; /* Фиксируем положение под анимацией */
+        }
+
+        /* Результат проверки (скрыт изначально, плавное появление) */
         #status {
             font-size: 24px;
             color: black;
             opacity: 0;
             transition: opacity 0.8s ease-in-out;
-            margin-top: -40px; /* Фиксируем под анимацией */
-            position: absolute;
         }
     </style>
 </head>
@@ -61,11 +68,13 @@
         <div class="cf-turnstile" id="captcha" data-callback="unlockSite"></div>
     </div>
 
-    <!-- Анимация загрузки -->
+    <!-- Контейнер для анимации -->
     <div id="animation-container"></div>
 
-    <!-- Результат -->
-    <div id="status"></div>
+    <!-- Контейнер для результата -->
+    <div class="result-container">
+        <div id="status"></div>
+    </div>
 
     <script type="module">
         import CONFIG from './config.js';
