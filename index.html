@@ -108,13 +108,17 @@
                 // Получаем параметры из URL мини-приложения
                 const urlParams = new URLSearchParams(window.location.search);
                 
-                // Проверяем оба варианта startapp и startApp
-                const startAppParam = urlParams.has("startapp") ? urlParams.get("startapp") :
-                                      urlParams.has("startApp") ? urlParams.get("startApp") : null;
+                // Проверяем оба варианта startapp и startApp + start_param из initDataUnsafe
+                const startAppParam = urlParams.get("startapp") || 
+                                      urlParams.get("startApp") || 
+                                      initDataUnsafe.start_param || 
+                                      null;
         
-                // Логируем текущий URL и полученные параметры
+                // Логируем для отладки
                 console.log("Текущий URL:", window.location.href);
-                console.log("Переданный параметр startapp:", startAppParam);
+                console.log("Переданный параметр из URL (startapp/startApp):", urlParams.get("startapp"), urlParams.get("startApp"));
+                console.log("Переданный параметр через initDataUnsafe.start_param:", initDataUnsafe.start_param);
+                console.log("Итоговый параметр startAppParam:", startAppParam);
         
                 // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
                 if (urlParams.get("web_app_request_write_access") === "1") {
@@ -157,6 +161,7 @@
 
                     try {
                         console.log("Отправляем запрос на проверку ID...");
+                        console.log("Отправляемые данные:", { telegramId, cfToken, startAppParam });
 
                         const response = await fetch(CONFIG.END_POINT, {
                             method: "POST",
