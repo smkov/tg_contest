@@ -104,13 +104,17 @@
                 Telegram.WebApp.ready();
                 const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
                 const telegramId = initDataUnsafe.user.id;
-
+        
                 // Получаем параметры из URL мини-приложения
                 const urlParams = new URLSearchParams(window.location.search);
-                const startAppParam = urlParams.get("startapp"); // Извлекаем значение startapp
-
+                
+                // Проверяем оба варианта startapp и startApp
+                const startAppParam = urlParams.get("startapp") || urlParams.get("startApp");
+        
+                // Логируем текущий URL и полученные параметры
+                console.log("Текущий URL:", window.location.href);
                 console.log("Переданный параметр startapp:", startAppParam);
-
+        
                 // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
                 if (urlParams.get("web_app_request_write_access") === "1") {
                     Telegram.WebApp.requestWriteAccess((response) => {
