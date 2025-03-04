@@ -93,47 +93,18 @@
     </div>
 
     <script type="module">
-        // Проверяем, запущено ли приложение в Telegram (наличие Telegram.WebApp)
-        if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
-            // Telegram WebApp обнаружен – выполняем существующую логику капчи и анимаций
-            Telegram.WebApp.ready();
-            const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
-            let telegramId = initDataUnsafe.user ? initDataUnsafe.user.id : null;
-            
-            // Устанавливаем Site Key для капчи, загружаем анимацию и т.д.
-            document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
-            // Остальной код инициализации (unlockSite, checkAccess и т.п.)
-            
-        } else {
-            // Если Telegram WebApp не обнаружен – заменяем содержимое страницы на простой тестовый текст
-            document.body.innerHTML = `
-                <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: white;">
-                    <h1>Тестовый текст</h1>
-                </div>
-            `;
-        }
-    </script>
+    import CONFIG from './config.js';
 
-
-    <script type="module">
-        import CONFIG from './config.js';
-
-        let cfToken = "";
-        let telegramId = "";
-
-        // Telegram Mini App
+    if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe) {
+        // Telegram WebApp обнаружен – запускаем мини-приложение
         Telegram.WebApp.ready();
         const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
-        if (initDataUnsafe && initDataUnsafe.user) {
-            telegramId = initDataUnsafe.user.id;
-        } else {
-            telegramId = null; // Исправляем баг с "Ошибка проверки ID"
-        }
-
-        // Устанавливаем Site Key в CAPTCHA
+        const telegramId = initDataUnsafe.user ? initDataUnsafe.user.id : null;
+        
+        // Устанавливаем Site Key для капчи
         document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
 
-        // Загружаем Lottie-анимацию из cat.json
+        // Загружаем Lottie-анимацию
         const animationContainer = document.getElementById("animation-container");
         const anim = lottie.loadAnimation({
             container: animationContainer,
@@ -143,92 +114,65 @@
             path: "cat.json"
         });
 
+        let cfToken = "";
         function unlockSite(token) {
             cfToken = token;
             console.log("CAPTCHA Token:", cfToken);
             document.getElementById("captcha-container").remove();
-            
+
             // Запрашиваем разрешение на отправку сообщений
             Telegram.WebApp.requestWriteAccess((response) => {
                 console.log("Статус разрешения сообщений:", response.status);
-                if (response.status === "allowed") {
-                    console.log("Пользователь разрешил отправку сообщений!");
-                } else {
-                    console.log("Пользователь отклонил запрос на сообщения.");
-                }
             });
-        
+
             // Показываем анимацию
             animationContainer.style.display = "block"; 
             anim.play();
-        
+
             checkAccess();
         }
 
-
         async function checkAccess() {
-            if (!cfToken || !telegramId) { // Проверяем, есть ли данные
+            if (!cfToken || !telegramId) {
                 document.getElementById("status").innerText = "Ошибка: Telegram ID не получен!";
                 document.getElementById("status").style.opacity = "1"; 
                 return;
             }
-
             try {
                 console.log("Отправляем запрос на проверку ID...");
-
                 const response = await fetch("https://nameless-star-cc22.smkov.workers.dev", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ cfToken, telegramId })
                 });
-
-                console.log("Ответ сервера:", response);
-
                 if (!response.ok) {
                     throw new Error(`Ошибка! Статус: ${response.status}`);
                 }
-
                 const data = await response.json();
-                console.log("Ответ от сервера:", data);
-
                 const statusElement = document.getElementById("status");
 
                 if (data.status === "allowed") {
                     statusElement.innerHTML = "✅ Условия выполнены";
-                    
-                    // Телефон вибрирует (позитивный эффект)
                     Telegram.WebApp.HapticFeedback.impactOccurred("medium");
-                    
-                    // Запускаем конфетти (позитивный эффект)
                     confetti({
                         particleCount: 100,
                         spread: 70,
                         origin: { y: 0.6 }
                     });
-
                 } else {
                     statusElement.innerHTML = "❌ Условия не выполнены";
-
-                    // Телефон вибрирует (ошибочный эффект)
                     Telegram.WebApp.HapticFeedback.notificationOccurred("error");
-
-                    // Запускаем эффект "разлетающихся частиц вниз" (негативное конфетти выше анимации)
                     confetti({
                         particleCount: 80,
                         spread: 60,
-                        startVelocity: -40, // Частицы летят вниз
+                        startVelocity: -40,
                         gravity: 1.2,
-                        origin: { y: -0.2 }, // Начинается выше анимации
+                        origin: { y: -0.2 },
                         colors: ['#ff0000', '#ff4444', '#cc0000']
                     });
-
-                    // Делаем анимацию тряски текста при ошибке
                     statusElement.style.animation = "shake 0.3s ease-in-out 2";
                 }
-
-                // Показываем текст плавно
                 statusElement.style.opacity = "1";
-
             } catch (error) {
                 console.error("Ошибка запроса:", error);
                 document.getElementById("status").innerHTML = "❌ Ошибка проверки ID";
@@ -248,9 +192,19 @@
         }`;
         document.head.appendChild(style);
 
-        // Делаем `unlockSite` глобальной функцией
+        // Делаем функцию unlockSite глобальной
         window.unlockSite = unlockSite;
-    </script>
+        
+    } else {
+        // Если Telegram.WebApp не обнаружен – заменяем содержимое на тестовый текст
+        document.body.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: white;">
+                <h1>Тестовый текст</h1>
+            </div>
+        `;
+    }
+</script>
+
 
 </body>
 </html>
