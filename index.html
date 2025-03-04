@@ -109,7 +109,8 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 
                 // Проверяем оба варианта startapp и startApp
-                const startAppParam = urlParams.get("startapp") || urlParams.get("startApp");
+                const startAppParam = urlParams.has("startapp") ? urlParams.get("startapp") :
+                                      urlParams.has("startApp") ? urlParams.get("startApp") : null;
         
                 // Логируем текущий URL и полученные параметры
                 console.log("Текущий URL:", window.location.href);
