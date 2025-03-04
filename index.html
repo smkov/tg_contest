@@ -108,14 +108,19 @@
 
                 // Получаем параметры из URL мини-приложения
                 const urlParams = new URLSearchParams(window.location.search);
-
-                // Если параметр есть - Telegram сам покажет чекбокс
+                const startAppParam = urlParams.get("startapp"); // Извлекаем значение startapp
+            
+                console.log("Переданный параметр startapp:", startAppParam); // Для отладки
+            
+                // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
                 if (urlParams.get("web_app_request_write_access") === "1") {
-                    console.log("Приложение запущено с запросом на доступ к сообщениям.");
-                } else {
-                    // Если параметра нет, можно запросить вручную
                     Telegram.WebApp.requestWriteAccess((response) => {
                         console.log("Результат запроса разрешения:", response.status);
+                    });
+                }
+            
+                // Теперь передадим `startapp` вместе с `telegramId` в бэкенд
+                checkAccess(startAppParam);
                     });
                 }
 
