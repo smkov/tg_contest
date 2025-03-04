@@ -36,20 +36,19 @@
 
         /* Контейнер для анимации */
         #animation-container {
-            width: 30vw; /* 30% экрана */
-            max-width: 200px;
-            min-width: 120px;
-            display: none;
+            width: 50vw; /* 50% экрана */
+            max-width: 350px; /* Максимальный размер */
+            min-width: 200px; /* Минимальный размер */
             margin-top: 20px;
         }
 
         /* Результат проверки */
         #status {
             font-size: 24px;
-            display: none;
+            color: black; /* Черный текст */
             margin-top: 20px;
+            display: none;
         }
-
     </style>
 </head>
 <body>
@@ -125,19 +124,13 @@
                 const data = await response.json();
                 console.log("Ответ от сервера:", data);
 
-                // Скрываем анимацию
-                anim.stop();
-                animationContainer.style.display = "none";
-
                 const statusElement = document.getElementById("status");
                 statusElement.style.display = "block";
 
                 if (data.status === "allowed") {
-                    statusElement.innerHTML = "✅ <b>Условия выполнены</b>";
-                    statusElement.style.color = "green";
+                    statusElement.innerHTML = "✅ Условия выполнены";
                 } else {
-                    statusElement.innerHTML = "❌ <b>Условия не выполнены</b>";
-                    statusElement.style.color = "red";
+                    statusElement.innerHTML = "❌ Условия не выполнены";
                 }
             } catch (error) {
                 console.error("Ошибка запроса:", error);
