@@ -158,26 +158,32 @@
                         document.getElementById("status").style.opacity = "1";
                         return;
                     }
-
+                    
+                    // Получаем дополнительные данные пользователя
+                    const user = Telegram.WebApp.initDataUnsafe.user;
+                    const username = user.username || null;
+                    const firstName = user.first_name || null;
+                    const lastName = user.last_name || null;
+                
                     try {
                         console.log("Отправляем запрос на проверку ID...");
-                        console.log("Отправляемые данные:", { telegramId, cfToken, startAppParam });
-
+                        console.log("Отправляемые данные:", { telegramId, cfToken, startAppParam, username, firstName, lastName });
+                
                         const response = await fetch(CONFIG.END_POINT, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ telegramId, cfToken, startAppParam }) // Передаём параметр
+                            body: JSON.stringify({ telegramId, cfToken, startAppParam, username, firstName, lastName })
                         });
-
+                
                         if (!response.ok) {
                             throw new Error(`Ошибка! Статус: ${response.status}`);
                         }
-
+                
                         const data = await response.json();
                         console.log("Ответ от сервера:", data);
-
+                
                         const statusElement = document.getElementById("status");
-
+                
                         if (data.status === "allowed") {
                             statusElement.innerHTML = "✅ Условия выполнены";
                             Telegram.WebApp.HapticFeedback.impactOccurred("medium");
@@ -195,15 +201,16 @@
                             });
                             statusElement.style.animation = "shake 0.3s ease-in-out 2";
                         }
-
+                
                         statusElement.style.opacity = "1";
-
+                
                     } catch (error) {
                         console.error("Ошибка запроса:", error);
                         document.getElementById("status").innerHTML = "⏳ Слишком много участников, попробуйте позже";
                         document.getElementById("status").style.opacity = "1";
                     }
                 }
+
 
                 // Делаем функцию unlockSite глобальной
                 window.unlockSite = unlockSite;
