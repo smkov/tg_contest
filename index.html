@@ -148,42 +148,38 @@
             return;
           }
           
-          // Получаем дополнительные данные пользователя
           const user = Telegram.WebApp.initDataUnsafe.user;
           const username = user.username || null;
           const firstName = user.first_name || null;
           const lastName = user.last_name || null;
-          
           const statusElement = document.getElementById("status");
-          // Массив сообщений, отображаемых между попытками
-          const retryMessages = [
-            "Сверяем данные…",
-            "Считаем участников…",
-            "Проверяем подписки…"
+        
+          // Массив сообщений для каждой попытки
+          const attemptMessages = [
+            "🔍 Сверяем данные…",
+            "🤔 Считаем участников…",
+            "🔄 Проверяем подписки…",
+            "⏳ Ещё одна попытка…",
+            "🚀 Завершаем проверку…"
           ];
-          
-          const maxAttempts = 3;
+        
+          const maxAttempts = 5;
           let attempt = 0;
           let response, data;
-          
-          while (attempt < maxAttempts) {
-            // Обновляем текст на экране для текущей попытки
-            statusElement.innerHTML = retryMessages[attempt] || "Проверяем…";
+          let success = false;
+          let backoff = 500; // начальная задержка 500 мс
+        
+          while (attempt < maxAttempts && !success) {
+            // Обновляем сообщение для текущей попытки
+            statusElement.innerHTML = attemptMessages[attempt];
             statusElement.style.opacity = "1";
-            console.log(`Попытка ${attempt + 1}: ${retryMessages[attempt]}`);
-            
+            console.log(`Попытка ${attempt + 1}: ${attemptMessages[attempt]}`);
+        
             try {
               response = await fetch(CONFIG.END_POINT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  telegramId,
-                  cfToken,
-                  startAppParam,
-                  username,
-                  firstName,
-                  lastName
-                })
+                body: JSON.stringify({ telegramId, cfToken, startAppParam, username, firstName, lastName })
               });
               
               if (!response.ok) {
@@ -192,21 +188,49 @@
               }
               
               data = await response.json();
-              break; // Если запрос успешен, выходим из цикла
+              success = true; // если запрос успешен, выходим из цикла
+              break;
             } catch (error) {
               console.error(`Попытка ${attempt + 1} не удалась:`, error);
               attempt++;
               if (attempt < maxAttempts) {
-                // Ждем перед следующей попыткой, экспоненциально увеличивая задержку
-                await new Promise(resolve => setTimeout(resolve, 500 * Math.pow(2, attempt)));
+                // Экспоненциальная задержка с небольшим джиттером
+                await new Promise(resolve => setTimeout(resolve, backoff + Math.random() * 200));
+                backoff *= 2;
               } else {
-                // Если все попытки исчерпаны, выводим сообщение об ошибке
+                // Если все попытки исчерпаны
                 statusElement.innerHTML = "⏳ Ошибка запроса. Повторите попытку позже.";
                 statusElement.style.opacity = "1";
                 return;
               }
             }
           }
+        
+          // Обработка ответа, если запрос успешен
+          if (success && data) {
+            if (data.status === "finished") {
+              statusElement.innerHTML = "Конкурс завершён 🔚";
+            } else if (data.status === "allowed") {
+              statusElement.innerHTML = "✅ Условия выполнены";
+              Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+              confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            } else if (data.status === "denied") {
+              statusElement.innerHTML = "❌ Условия не выполнены";
+              Telegram.WebApp.HapticFeedback.notificationOccurred("error");
+              confetti({
+                particleCount: 80,
+                spread: 60,
+                startVelocity: -40,
+                gravity: 1.2,
+                origin: { y: -0.2 },
+                colors: ['#ff0000', '#ff4444', '#cc0000']
+              });
+              statusElement.style.animation = "shake 0.3s ease-in-out 2";
+            }
+            statusElement.style.opacity = "1";
+          }
+        }
+
           
           // Обработка ответа от сервера
           if (data.status === "finished") {
