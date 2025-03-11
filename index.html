@@ -91,38 +91,34 @@
     import CONFIG from './config.js';
 
     document.addEventListener("DOMContentLoaded", () => {
-      if (window.Telegram &&
-          Telegram.WebApp &&
-          Telegram.WebApp.initDataUnsafe &&
-          Telegram.WebApp.initDataUnsafe.user) {
+      if (window.Telegram && Telegram.WebApp && Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
 
         Telegram.WebApp.ready();
         const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
         const telegramId = initDataUnsafe.user.id;
-        
+
         // Получаем параметры из URL мини-приложения
         const urlParams = new URLSearchParams(window.location.search);
         const startAppParam = urlParams.get("startapp") || 
                               urlParams.get("startApp") || 
                               initDataUnsafe.start_param || 
                               null;
-        
-        // Логирование для отладки
+
         console.log("Текущий URL:", window.location.href);
-        console.log("Переданный параметр (startapp/startApp):", urlParams.get("startapp"), urlParams.get("startApp"));
+        console.log("Параметры из URL:", urlParams.get("startapp"), urlParams.get("startApp"));
         console.log("initDataUnsafe.start_param:", initDataUnsafe.start_param);
         console.log("Итоговый параметр startAppParam:", startAppParam);
-        
+
         // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
         if (urlParams.get("web_app_request_write_access") === "1") {
           Telegram.WebApp.requestWriteAccess((response) => {
             console.log("Результат запроса разрешения:", response.status);
           });
         }
-        
+
         // Устанавливаем Site Key для CAPTCHA
         document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
-        
+
         // Загружаем Lottie-анимацию
         const animationContainer = document.getElementById("animation-container");
         const anim = lottie.loadAnimation({
@@ -132,34 +128,34 @@
           autoplay: false,
           path: "cat.json"
         });
-        
+
         function unlockSite(token) {
           console.log("CAPTCHA Token:", token);
           document.getElementById("captcha-container").remove();
-          
+
           // Показываем анимацию
           animationContainer.style.display = "block";
           anim.play();
-          
+
           // Отправляем данные в бэкенд
           checkAccess(token, startAppParam);
         }
-        
+
         async function checkAccess(cfToken, startAppParam) {
           if (!telegramId) {
             document.getElementById("status").innerText = "Ошибка: Telegram ID не получен!";
             document.getElementById("status").style.opacity = "1";
             return;
           }
-          
+
           // Получаем дополнительные данные пользователя
           const user = Telegram.WebApp.initDataUnsafe.user;
           const username = user.username || null;
           const firstName = user.first_name || null;
           const lastName = user.last_name || null;
-          
+
           try {
-            console.log("Отправляем запрос на проверку ID...");
+            console.log("Отправляем запрос на проверку условий...");
             console.log("Отправляемые данные:", { telegramId, cfToken, startAppParam, username, firstName, lastName });
             
             const response = await fetch(CONFIG.END_POINT, {
@@ -169,7 +165,6 @@
             });
             
             if (!response.ok) {
-              // Читаем тело ответа для подробностей
               const errorText = await response.text();
               throw new Error(`Ошибка! Статус: ${response.status}. ${errorText}`);
             }
@@ -203,17 +198,13 @@
             
           } catch (error) {
             console.error("Ошибка запроса:", error);
-            // Отображаем конкретное сообщение об ошибке
-            document.getElementById("status").innerHTML = `Ошибка запроса: ${error.message}`;
+            document.getElementById("status").innerHTML = "⏳ Ошибка запроса. Повторите попытку позже.";
             document.getElementById("status").style.opacity = "1";
           }
         }
         
-        // Делаем функцию unlockSite глобальной
         window.unlockSite = unlockSite;
-        
       } else {
-        // Если не в Telegram — заменяем содержимое страницы на тестовый текст
         document.body.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: white;">
             <h1>Разработка ботов <a href="https://t.me/bots_space" target="_blank">t.me/bots_space</a></h1>
