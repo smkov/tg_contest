@@ -109,8 +109,8 @@
         
         // Логирование для отладки
         console.log("Текущий URL:", window.location.href);
-        console.log("Переданный параметр из URL (startapp/startApp):", urlParams.get("startapp"), urlParams.get("startApp"));
-        console.log("Переданный параметр через initDataUnsafe.start_param:", initDataUnsafe.start_param);
+        console.log("Переданный параметр (startapp/startApp):", urlParams.get("startapp"), urlParams.get("startApp"));
+        console.log("initDataUnsafe.start_param:", initDataUnsafe.start_param);
         console.log("Итоговый параметр startAppParam:", startAppParam);
         
         // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
@@ -169,7 +169,9 @@
             });
             
             if (!response.ok) {
-              throw new Error(`Ошибка! Статус: ${response.status}`);
+              // Читаем тело ответа для подробностей
+              const errorText = await response.text();
+              throw new Error(`Ошибка! Статус: ${response.status}. ${errorText}`);
             }
             
             const data = await response.json();
@@ -177,14 +179,13 @@
             
             const statusElement = document.getElementById("status");
             
-            if(data.status === "finished"){
-              // Если конкурс завершён, показываем сообщение о завершении
+            if (data.status === "finished") {
               statusElement.innerHTML = "Конкурс завершён 🔚";
             } else if (data.status === "allowed") {
               statusElement.innerHTML = "✅ Условия выполнены";
               Telegram.WebApp.HapticFeedback.impactOccurred("medium");
               confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            } else if(data.status === "denied"){
+            } else if (data.status === "denied") {
               statusElement.innerHTML = "❌ Условия не выполнены";
               Telegram.WebApp.HapticFeedback.notificationOccurred("error");
               confetti({
@@ -202,7 +203,8 @@
             
           } catch (error) {
             console.error("Ошибка запроса:", error);
-            document.getElementById("status").innerHTML = "⏳ Слишком много участников, попробуйте позже";
+            // Отображаем конкретное сообщение об ошибке
+            document.getElementById("status").innerHTML = `Ошибка запроса: ${error.message}`;
             document.getElementById("status").style.opacity = "1";
           }
         }
