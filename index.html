@@ -10,17 +10,24 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <style>
+    /* Всегда светлый фон + чёрный текст */
     body {
-      text-align: center;
-      font-family: Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      overflow: hidden;
+      background-color: #ffffff !important;
+      color: #000000 !important;
     }
+
+    /* Тёмная тема */
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #1e1e1e !important;
+        color: #ffffff !important;
+      }
+      /* Затемнение экрана при показе CAPTCHA */
+      #captcha-container {
+        background: rgba(0, 0, 0, 0.6) !important;
+      }
+    }
+
     /* Затемнение экрана при показе CAPTCHA */
     #captcha-container {
       position: fixed;
@@ -60,7 +67,7 @@
     /* Адаптивный текст результата */
     #status {
       font-size: clamp(18px, 4vw, 28px);
-      color: black;
+      color: inherit !important;
       opacity: 0;
       transition: opacity 0.8s ease-in-out;
       width: 100%;
@@ -204,7 +211,8 @@
                 return;
               }
             }
-        
+          }
+
           // Обработка ответа, если запрос успешен
           if (success && data) {
             if (data.status === "finished") {
@@ -230,31 +238,6 @@
           }
         }
 
-          
-          // Обработка ответа от сервера
-          if (data.status === "finished") {
-            statusElement.innerHTML = "Конкурс завершён 🔚";
-          } else if (data.status === "allowed") {
-            statusElement.innerHTML = "✅ Условия выполнены";
-            Telegram.WebApp.HapticFeedback.impactOccurred("medium");
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-          } else if (data.status === "denied") {
-            statusElement.innerHTML = "❌ Условия не выполнены";
-            Telegram.WebApp.HapticFeedback.notificationOccurred("error");
-            confetti({
-              particleCount: 80,
-              spread: 60,
-              startVelocity: -40,
-              gravity: 1.2,
-              origin: { y: -0.2 },
-              colors: ['#ff0000', '#ff4444', '#cc0000']
-            });
-            statusElement.style.animation = "shake 0.3s ease-in-out 2";
-          }
-          statusElement.style.opacity = "1";
-        }
-
-        
         window.unlockSite = unlockSite;
       } else {
         document.body.innerHTML = `
