@@ -195,11 +195,11 @@
           if (data.status === "finished") {
             statusEl.innerHTML = "Конкурс завершён 🔚";
           } else if (data.status === "allowed") {
-            statusEl.innerHTML = "✅ Условия выполнены";
+            statusEl.innerHTML = "✅ Условия подписки выполнены";
             Telegram.WebApp.HapticFeedback.impactOccurred("medium");
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
           } else {
-            statusEl.innerHTML = "❌ Условия не выполнены";
+            statusEl.innerHTML = "❌ Условия подписки не выполнены";
             Telegram.WebApp.HapticFeedback.notificationOccurred("error");
             confetti({
               particleCount: 80,
