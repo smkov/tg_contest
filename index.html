@@ -10,19 +10,26 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.9.6/lottie.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
   <style>
-    /* Всегда светлый фон + чёрный текст */
+    /* Основной контейнер — центрируем всё */
     body {
       background-color: #ffffff !important;
       color: #000000 !important;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      overflow: hidden;
     }
-
     /* Тёмная тема */
     @media (prefers-color-scheme: dark) {
       body {
         background-color: #1e1e1e !important;
         color: #ffffff !important;
       }
-      /* Затемнение экрана при показе CAPTCHA */
       #captcha-container {
         background: rgba(0, 0, 0, 0.6) !important;
       }
@@ -57,12 +64,12 @@
     }
     /* Контейнер для результата */
     .result-container {
-      height: 20vh;
       display: flex;
       align-items: center;
       justify-content: center;
       width: 80%;
       max-width: 500px;
+      height: 20vh;
     }
     /* Адаптивный текст результата */
     #status {
@@ -104,29 +111,20 @@
         const initDataUnsafe = Telegram.WebApp.initDataUnsafe;
         const telegramId = initDataUnsafe.user.id;
 
-        // Получаем параметры из URL мини-приложения
         const urlParams = new URLSearchParams(window.location.search);
-        const startAppParam = urlParams.get("startapp") || 
-                              urlParams.get("startApp") || 
-                              initDataUnsafe.start_param || 
+        const startAppParam = urlParams.get("startapp") ||
+                              urlParams.get("startApp") ||
+                              initDataUnsafe.start_param ||
                               null;
 
-        console.log("Текущий URL:", window.location.href);
-        console.log("Параметры из URL:", urlParams.get("startapp"), urlParams.get("startApp"));
-        console.log("initDataUnsafe.start_param:", initDataUnsafe.start_param);
-        console.log("Итоговый параметр startAppParam:", startAppParam);
-
-        // Если передан request_write=1, запрашиваем разрешение на отправку сообщений
         if (urlParams.get("web_app_request_write_access") === "1") {
           Telegram.WebApp.requestWriteAccess((response) => {
-            console.log("Результат запроса разрешения:", response.status);
+            console.log("Write access:", response.status);
           });
         }
 
-        // Устанавливаем Site Key для CAPTCHA
         document.getElementById("captcha").setAttribute("data-sitekey", CONFIG.SITE_KEY);
 
-        // Загружаем Lottie-анимацию
         const animationContainer = document.getElementById("animation-container");
         const anim = lottie.loadAnimation({
           container: animationContainer,
@@ -137,114 +135,90 @@
         });
 
         function unlockSite(token) {
-          console.log("CAPTCHA Token:", token);
           document.getElementById("captcha-container").remove();
-
-          // Показываем анимацию
           animationContainer.style.display = "block";
           anim.play();
-
-          // Отправляем данные в бэкенд
           checkAccess(token, startAppParam);
         }
 
         async function checkAccess(cfToken, startAppParam) {
+          const statusEl = document.getElementById("status");
           if (!telegramId) {
-            document.getElementById("status").innerText = "Ошибка: Telegram ID не получен!";
-            document.getElementById("status").style.opacity = "1";
+            statusEl.innerText = "Ошибка: Telegram ID не получен!";
+            statusEl.style.opacity = "1";
             return;
           }
-          
+
           const user = Telegram.WebApp.initDataUnsafe.user;
-          const username = user.username || null;
-          const firstName = user.first_name || null;
-          const lastName = user.last_name || null;
-          const statusElement = document.getElementById("status");
-        
-          // Массив сообщений для каждой попытки
-          const attemptMessages = [
+          const payload = {
+            telegramId,
+            cfToken,
+            startAppParam,
+            username: user.username || null,
+            firstName: user.first_name || null,
+            lastName: user.last_name || null
+          };
+
+          const msgs = [
             "🔍 Сверяем данные…",
             "🤔 Считаем участников…",
             "🔄 Проверяем подписки…",
             "⏳ Ещё одна попытка…",
             "🚀 Завершаем проверку…"
           ];
-        
-          const maxAttempts = 5;
-          let attempt = 0;
-          let response, data;
-          let success = false;
-          let backoff = 500; // начальная задержка 500 мс
-        
-          while (attempt < maxAttempts && !success) {
-            // Обновляем сообщение для текущей попытки
-            statusElement.innerHTML = attemptMessages[attempt];
-            statusElement.style.opacity = "1";
-            console.log(`Попытка ${attempt + 1}: ${attemptMessages[attempt]}`);
-        
+
+          let attempt = 0, success = false, backoff = 500, data;
+          while (attempt < 5 && !success) {
+            statusEl.innerHTML = msgs[attempt];
+            statusEl.style.opacity = "1";
             try {
-              response = await fetch(CONFIG.END_POINT, {
+              const res = await fetch(CONFIG.END_POINT, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ telegramId, cfToken, startAppParam, username, firstName, lastName })
+                body: JSON.stringify(payload)
               });
-              
-              if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Ошибка! Статус: ${response.status}. ${errorText}`);
-              }
-              
-              data = await response.json();
-              success = true; // если запрос успешен, выходим из цикла
-              break;
-            } catch (error) {
-              console.error(`Попытка ${attempt + 1} не удалась:`, error);
+              if (!res.ok) throw new Error(`Статус ${res.status}`);
+              data = await res.json();
+              success = true;
+            } catch (e) {
               attempt++;
-              if (attempt < maxAttempts) {
-                // Экспоненциальная задержка с небольшим джиттером
-                await new Promise(resolve => setTimeout(resolve, backoff + Math.random() * 200));
+              if (attempt < 5) {
+                await new Promise(r => setTimeout(r, backoff + Math.random()*200));
                 backoff *= 2;
               } else {
-                // Если все попытки исчерпаны
-                statusElement.innerHTML = "⏳ Ошибка запроса. Повторите попытку позже.";
-                statusElement.style.opacity = "1";
+                statusEl.innerHTML = "⏳ Ошибка запроса. Повторите позже.";
                 return;
               }
             }
           }
 
-          // Обработка ответа, если запрос успешен
-          if (success && data) {
-            if (data.status === "finished") {
-              statusElement.innerHTML = "Конкурс завершён 🔚";
-            } else if (data.status === "allowed") {
-              statusElement.innerHTML = "✅ Условия выполнены";
-              Telegram.WebApp.HapticFeedback.impactOccurred("medium");
-              confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            } else if (data.status === "denied") {
-              statusElement.innerHTML = "❌ Условия не выполнены";
-              Telegram.WebApp.HapticFeedback.notificationOccurred("error");
-              confetti({
-                particleCount: 80,
-                spread: 60,
-                startVelocity: -40,
-                gravity: 1.2,
-                origin: { y: -0.2 },
-                colors: ['#ff0000', '#ff4444', '#cc0000']
-              });
-              statusElement.style.animation = "shake 0.3s ease-in-out 2";
-            }
-            statusElement.style.opacity = "1";
+          if (data.status === "finished") {
+            statusEl.innerHTML = "Конкурс завершён 🔚";
+          } else if (data.status === "allowed") {
+            statusEl.innerHTML = "✅ Условия выполнены";
+            Telegram.WebApp.HapticFeedback.impactOccurred("medium");
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          } else {
+            statusEl.innerHTML = "❌ Условия не выполнены";
+            Telegram.WebApp.HapticFeedback.notificationOccurred("error");
+            confetti({
+              particleCount: 80,
+              spread: 60,
+              startVelocity: -40,
+              gravity: 1.2,
+              origin: { y: -0.2 },
+              colors: ['#ff0000', '#ff4444', '#cc0000']
+            });
+            statusEl.style.animation = "shake 0.3s ease-in-out 2";
           }
         }
 
         window.unlockSite = unlockSite;
       } else {
         document.body.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: white;">
+          <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:white;">
             <h1>Разработка ботов <a href="https://t.me/bots_space" target="_blank">t.me/bots_space</a></h1>
-          </div>
-        `;
+          </div>`;
       }
     });
   </script>
